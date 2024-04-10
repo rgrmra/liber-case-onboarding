@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy
+from openpyxl import load_workbook
 
 def read_file(filename):
     df = []
@@ -18,17 +20,35 @@ def read_file(filename):
 
 df = read_file("clientes.csv")
 df2 = read_file("clientes2.csv")
-#print(df)
-#print(df2)
 df = pd.merge(df, df2, on="id") 
 
-df.rename(columns={"segmento":"sgmento"}, inplace=True)
-#print(df.head(10))
+#df.rename(columns={"segmento":"sgmento"}, inplace=True)
 
-xl = pd.read_excel("resultado.xlsx")
-xl = pd.concat([xl, df], axis=0)
-print(xl)
-xl = xl.drop_duplicates(subset=['email'], keep="first")
-print(xl)
+#xl = pd.read_excel("resultado.xlsx")
+#xl = pd.concat([xl, df], axis=0)
+#print(xl)
+#xl = xl.drop_duplicates(subset=['email'], keep="first")
+#print(xl)
+#
+#xl.to_excel("resultado.xlsx", index=False)
 
-xl.to_excel("resultado.xlsx", index=False)
+#print(type(5))
+#
+#df['receita_anual'] = df['receita_anual'].astype(int)
+#df['receita_anual'] = df['receita_anual'].map("R$ {:,.2f}".format)
+
+print(df)
+res = load_workbook("resultado.xlsx")
+A = res['Sheet1']
+
+for index in range(len(df)):
+    A.cell(row=index + 2, column=1, value=df['id'][index])
+    A.cell(row=index + 2, column=2, value=df['nome'][index])
+    A.cell(row=index + 2, column=3, value=df['telefone'][index])
+    A.cell(row=index + 2, column=4, value=df['email'][index])
+    A.cell(row=index + 2, column=5, value=df['endereco'][index])
+    A.cell(row=index + 2, column=6, value=df['cnpj'][index])
+    A.cell(row=index + 2, column=7, value=df['segmento'][index])
+    A.cell(row=index + 2, column=8, value=df['receita_anual'][index])
+
+res.save("resultado.xlsx")

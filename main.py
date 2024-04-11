@@ -1,6 +1,5 @@
 import pandas as pd
-import numpy
-from openpyxl import load_workbook
+import re
 
 def read_file(filename):
     df = []
@@ -18,37 +17,80 @@ def read_file(filename):
             df.append(values)
     return pd.DataFrame(df, columns=header)
 
-df = read_file("clientes.csv")
-df2 = read_file("clientes2.csv")
-df = pd.merge(df, df2, on="id") 
+def define_datatypes(df = pd.DataFrame()):
+    if not df.empty:
+        df['id'] = df['id'].astype(int)
+        df['nome'] = df['nome'].astype(str)
+        df['telefone'] = df['telefone'].astype(str)
+        df['email'] = df['email'].astype(str)
+        df['cnpj'] = df['cnpj'].astype(str)
+        df['sgmento'] = df['sgmento'].astype(str)
+        df['receita_anual'] = df['receita_anual'].astype(float)
+    return df
 
-#df.rename(columns={"segmento":"sgmento"}, inplace=True)
+def _validate_id(df):
+    df['id'] = df['id'].astype(str).str.strip()
+    df = df[df['id'].astype(str).str.isdigit()]
+    return df
 
-#xl = pd.read_excel("resultado.xlsx")
-#xl = pd.concat([xl, df], axis=0)
-#print(xl)
-#xl = xl.drop_duplicates(subset=['email'], keep="first")
-#print(xl)
-#
-#xl.to_excel("resultado.xlsx", index=False)
+def _validate_nome(df):
+    df['nome'] = df['nome'].astype(str).str.strip()
+    df = df[df['nome'].astype(str).str.match(r'^[a-zA-Zãáàéóõôç\s]+$', na=False)]
+    return df
 
-#print(type(5))
-#
-#df['receita_anual'] = df['receita_anual'].astype(int)
-#df['receita_anual'] = df['receita_anual'].map("R$ {:,.2f}".format)
+def _validate_telefone(df):
+    df['telefone'] = df['telefone'].astype(str).str.strip()
+    df = df[df['telefone'].astype(str).str.match(r'^(\([0-9]{2}\)) {1}([0-9]{4,5})-{1}([0-9]{4})$', na=False)]
+    return df
 
-print(df)
-res = load_workbook("resultado.xlsx")
-A = res['Sheet1']
+def _validate_email(df):
+    df['email'] = df['email'].astype(str).str.strip()
+    df = df[df['email'].astype(str).str.match(r'^[a-z0-9_\-]{1,64}@{1}[a-z0-9]{1,64}.{1}[a-z]{2,4}$', na=False)]
+    return df
 
-for index in range(len(df)):
-    A.cell(row=index + 2, column=1, value=df['id'][index])
-    A.cell(row=index + 2, column=2, value=df['nome'][index])
-    A.cell(row=index + 2, column=3, value=df['telefone'][index])
-    A.cell(row=index + 2, column=4, value=df['email'][index])
-    A.cell(row=index + 2, column=5, value=df['endereco'][index])
-    A.cell(row=index + 2, column=6, value=df['cnpj'][index])
-    A.cell(row=index + 2, column=7, value=df['segmento'][index])
-    A.cell(row=index + 2, column=8, value=df['receita_anual'][index])
+def _validate_cnpj(df):
+    df['cnpj'] = df['cnpj'].astype(str).str.strip()
+    df = df[df['cnpj'].astype(str).str.len() == 14]
+    df = df[df['cnpj'].astype(str).str.isdigit()]
+    return df
 
-res.save("resultado.xlsx")
+def _validate_segmento(df):
+    df['sgmento'] = df['sgmento'].astype(str).str.strip()
+    df = df[df['sgmento'].astype(str).str.match(r'^[a-zA-Zãáàéóõôç\s]+$', na=False)]
+    return (df)
+
+def _validate_receita_anual(df):
+    df['receita_anual'] = df['receita_anual'].astype(str).str.strip()
+    df = df[df['receita_anual'].astype(str).str.match(r'^[0-9]+$', na=False)]
+    return df
+
+def validate(df = pd.DataFrame()):
+    if not df.empty:
+        df.dropna()
+        df = _validate_id(df)
+        df = _validate_nome(df)
+        df = _validate_telefone(df)
+        df = _validate_email(df)
+        df = _validate_cnpj(df)
+        df = _validate_segmento(df)
+        df = _validate_receita_anual(df)
+    return df
+
+df = read_file('clientes.csv')
+df2 = read_file('clientes2.csv')
+
+df = pd.merge(df, df2, on='id')
+
+df.rename(columns={'segmento':'sgmento'}, inplace=True)
+
+xl = pd.read_excel('resultado.xlsx', dtype=str)
+
+df = define_datatypes(validate(df))
+xl = define_datatypes(xl)
+
+xl = pd.concat([xl, df], axis=0)
+
+xl.drop_duplicates(subset='id', keep='last', inplace=True)
+print(xl)
+
+xl.to_excel('resultado.xlsx', index=False)

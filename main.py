@@ -5,8 +5,9 @@ import re
 def read_file(filename):
     df = []
 
-    with open(filename, 'r') as file:
-        lines = file.readlines()
+    try:
+        with open(filename, 'r') as file:
+            lines = file.readlines()
 
         header = lines[0].strip().split(',')
 
@@ -19,7 +20,10 @@ def read_file(filename):
 
             df.append(values)
 
-    return pd.DataFrame(df, columns=header)
+        return pd.DataFrame(df, columns=header)
+    except Exception:
+        print(f'Error: Failed to read file \"{filename}\".')
+        return pd.DataFrame()
 
 def define_datatypes(df = pd.DataFrame()):
     if not df.empty:
@@ -101,8 +105,13 @@ def validate(df = pd.DataFrame()):
     return df
 
 def main():
+    df = []
+
     cliente = read_file('clientes.csv').astype(str)
     cliente2 = read_file('clientes2.csv').astype(str)
+    if cliente.empty or cliente2.empty:
+        print('Aborting...')
+        return
 
     df = pd.merge(cliente, cliente2, on='id')
     del cliente
@@ -110,7 +119,13 @@ def main():
 
     df.rename(columns={'segmento':'sgmento'}, inplace=True)
 
-    xl = pd.read_excel('resultado.xlsx', dtype=str)
+    filename = 'resultado.xlsx'
+    try:
+        xl = pd.read_excel(filename, dtype=str)
+    except Exception:
+        print(f'Error: Failed to read file \"{filename}\".')
+        print('Aborting...')
+        return
 
     df = define_datatypes(validate(df))
     xl = define_datatypes(xl)
@@ -120,9 +135,15 @@ def main():
 
     xl.drop_duplicates(subset=['id'], keep='last', inplace=True)
     xl.sort_values(by='id', inplace=True)
+
     print(xl)
 
-    xl.to_excel('resultado.xlsx', index=False)
+    try:
+        xl.to_excel(filename, index=False)
+    except Exception:
+        print(f'Error: Failed to write file \"{filename}\".')
+        print('Aborting...')
+        return
 
 if __name__ == '__main__':
     main()

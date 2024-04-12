@@ -113,7 +113,13 @@ def main():
         print('Aborting...')
         return
 
-    df = pd.merge(cliente, cliente2, on='id')
+    try:
+        df = pd.merge(cliente, cliente2, on='id')
+    except Exception:
+        print('Error: Failed to merge files.')
+        print('Aborting...')
+        return
+
     del cliente
     del cliente2
 

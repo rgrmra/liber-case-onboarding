@@ -68,9 +68,9 @@ def _validate_cnpj(df):
     df = df[df['cnpj'].str.isdigit()]
 
     for i in range(len(df['cnpj'])):
-        res = re.search('^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$', df.iloc[i]['cnpj'])
+        res = re.search(r'^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$', df.at[i, 'cnpj'])
         if res:
-            df.iloc[i]['cnpj'] = '{}.{}.{}/{}-{}'.format(res.group(1), res.group(2), res.group(3), res.group(4), res.group(5))
+            df.at[i, 'cnpj'] = '{}.{}.{}/{}-{}'.format(res.group(1), res.group(2), res.group(3), res.group(4), res.group(5))
 
     return df
 
@@ -83,12 +83,12 @@ def _validate_segmento(df):
 def _validate_receita_anual(df):
     df['receita_anual'] = df['receita_anual'].str.strip()
     df['receita_anual'] = df['receita_anual'].str.replace(',','.')
-    df = df[df['receita_anual'].str.match(r'^([\d]+).([\d]+)$', na=False)]
+    df = df[df['receita_anual'].str.match(r'^(\d+).(\d+)$', na=False)]
 
     locale.setlocale(locale.LC_MONETARY, 'pt_BR.UTF-8')
 
     for i in range(len(df['receita_anual'])):
-        df.iloc[i]['receita_anual'] = locale.currency(float(df.iloc[i]['receita_anual']), grouping=True)
+        df.at[i, 'receita_anual'] = locale.currency(float(df.at[i, 'receita_anual']), grouping=True)
 
     return df
 
